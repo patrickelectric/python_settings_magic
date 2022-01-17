@@ -83,6 +83,12 @@ class BaseSettings(pykson.JsonObject):
         with open(file_path, "w") as settings_file:
             settings_file.write(Pykson().to_json(self))
 
+    def reset(self):
+        """Reset internal data to default values
+        """
+        new = self.__class__()
+        self.__dict__.update(new.__dict__)
+
 
 class SettingsV1(BaseSettings):
     VERSION = 1
