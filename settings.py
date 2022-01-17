@@ -9,7 +9,7 @@ from pykson import Pykson
 class BaseSettings(pykson.JsonObject):
     """Base settings class that has version control and struct based serialization/deserialization"""
 
-    VERSION = pykson.IntegerField(null=False, default_value=0)
+    VERSION = pykson.IntegerField(default_value=0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,7 +50,7 @@ class BaseSettings(pykson.JsonObject):
 
                 if version > self.VERSION:
                     raise RuntimeError(
-                        f"Settings file comes from a future settings version ({version}), tomorrow does not exist"
+                        f"Settings file comes from a future settings version: {version}, latest supported: {self.VERSION}, tomorrow does not exist"
                     )
 
                 if version < self.VERSION:
@@ -92,7 +92,7 @@ class BaseSettings(pykson.JsonObject):
 
 class SettingsV1(BaseSettings):
     VERSION = 1
-    new_variable = pykson.IntegerField(null=False, default_value=1)
+    new_variable = pykson.IntegerField(default_value=1)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -112,7 +112,7 @@ class SettingsV1(BaseSettings):
 
 class SettingsV2(SettingsV1):
     VERSION = 2
-    new_variable_dosh = pykson.IntegerField(null=False, default_value=1)
+    new_variable_dosh = pykson.IntegerField(default_value=1)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -127,10 +127,27 @@ class SettingsV2(SettingsV1):
         data["new_variable_dosh"] = self.new_variable_dosh
 
 
+class SettingsV3(SettingsV1):
+    VERSION = 3
+    new_variable_tresh = pykson.IntegerField(default_value=42)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.VERSION = SettingsV3.VERSION
+
+    def migrate(self, data: dict):
+        if data["VERSION"] < SettingsV3.VERSION:
+            SettingsV2().migrate(data)
+
+        data["VERSION"] = SettingsV3.VERSION
+        data.pop("new_variable_dosh")
+
 if __name__ == "__main__":
     file_path = pathlib.Path("/tmp/potato/elefante.json")
 
     a = SettingsV1()
+    a.save(file_path)
     a.load(file_path)
     a.new_variable = 5
     a.save(file_path)
@@ -140,3 +157,7 @@ if __name__ == "__main__":
     b.load(file_path)
     b.save(file_path)
     print(Pykson().to_json(b))
+
+    c = SettingsV3()
+    c.load(file_path)
+    print(Pykson().to_json(c))
