@@ -5,6 +5,17 @@ import pathlib
 import pykson
 from pykson import Pykson
 
+class BadSettingsFile(ValueError):
+    """Settings file is not valid."""
+
+class SettingsFromTheFuture(ValueError):
+    """Settings file version is from a newer version of the service."""
+
+class MigrationFail(RuntimeError):
+    """Could not apply migration."""
+
+class BadAttributes(BadSettingsFile):
+    """Attributes on settings file are not valid."""
 
 class BaseSettings(pykson.JsonObject):
     """Base settings class that has version control and struct based serialization/deserialization"""
@@ -34,40 +45,36 @@ class BaseSettings(pykson.JsonObject):
         if not file_path.exists():
             raise RuntimeError(f"Settings file does not exist: {file_path}")
 
-        try:
-            with open(file_path, encoding="utf-8") as settings_file:
-                result = json.load(settings_file)
+        with open(file_path, encoding="utf-8") as settings_file:
+            result = json.load(settings_file)
 
-                if "VERSION" not in result.keys():
-                    raise RuntimeError(
-                        f"Settings file does not appears to contain a valid settings format: {result}"
-                    )
+            if "VERSION" not in result.keys():
+                raise BadSettingsFile(
+                    f"Settings file does not appears to contain a valid settings format: {result}"
+                )
 
+            version = result["VERSION"]
+
+            if version == 0:
+                raise BadAttributes("Settings file contains invalid version number")
+
+            if version > self.VERSION:
+                raise SettingsFromTheFuture(
+                    f"Settings file comes from a future settings version: {version}, latest supported: {self.VERSION}, tomorrow does not exist"
+                )
+
+            if version < self.VERSION:
+                self.migrate(result)
                 version = result["VERSION"]
 
-                if version == 0:
-                    raise RuntimeError("Settings file contains invalid version number")
+            if version != self.VERSION:
+                raise MigrationFail(
+                    "Migrate chain failed to update to the latest settings version available"
+                )
 
-                if version > self.VERSION:
-                    raise RuntimeError(
-                        f"Settings file comes from a future settings version: {version}, latest supported: {self.VERSION}, tomorrow does not exist"
-                    )
-
-                if version < self.VERSION:
-                    self.migrate(result)
-                    version = result["VERSION"]
-
-                if version != self.VERSION:
-                    raise RuntimeError(
-                        "Migrate chain failed to update to the latest settings version available"
-                    )
-
-                # Copy new content to settings class
-                new = Pykson().from_json(result, self.__class__)
-                self.__dict__.update(new.__dict__)
-
-        except Exception as exception:
-            print(f"Exception: {exception}")
+            # Copy new content to settings class
+            new = Pykson().from_json(result, self.__class__)
+            self.__dict__.update(new.__dict__)
 
     def save(self, file_path: pathlib.Path):
         """Save settings to file
