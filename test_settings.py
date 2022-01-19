@@ -2,8 +2,8 @@ import pathlib
 import tempfile
 
 import pykson
-from pykson import Pykson
 import settings
+
 
 class Animal(pykson.JsonObject):
     name = pykson.StringField()
@@ -12,9 +12,10 @@ class Animal(pykson.JsonObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+
 class SettingsV1(settings.BaseSettings):
     VERSION = 1
-    animal = pykson.ObjectField(Animal, default_value=Animal(name='bilica', animal_type='dog'))
+    animal = pykson.ObjectField(Animal, default_value=Animal(name="bilica", animal_type="dog"))
     first_variable = pykson.IntegerField(default_value=42)
 
     def __init__(self, *args, **kwargs):
@@ -33,13 +34,15 @@ class SettingsV1(settings.BaseSettings):
         data["animal"] = self.animal
         data["first_variable"] = self.first_variable
 
+
 class SettingsV1Expanded(SettingsV1):
-        new_variable = pykson.IntegerField(default_value=1992)
+    new_variable = pykson.IntegerField(default_value=1992)
+
 
 class SettingsV2(settings.BaseSettings):
     VERSION = 2
     first_variable = pykson.IntegerField(default_value=66)
-    new_animal_name = pykson.ObjectField(Animal, default_value=Animal(name='bilica', animal_type='dog'))
+    new_animal_name = pykson.ObjectField(Animal, default_value=Animal(name="bilica", animal_type="dog"))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,9 +59,10 @@ class SettingsV2(settings.BaseSettings):
         data["VERSION"] = SettingsV2.VERSION
         data["first_variable"] = self.first_variable
 
-        #Update variable name
+        # Update variable name
         data["new_animal_name"] = data["animal"]
         data.pop("animal")
+
 
 def test_basic_settings_save_load():
     # Check basic access
@@ -66,11 +70,12 @@ def test_basic_settings_save_load():
     assert settings_v1.VERSION == 1
     assert settings_v1.first_variable == 42
 
-    temporary_file = tempfile.NamedTemporaryFile()
-    file_path = pathlib.Path(temporary_file.name)
+    # pylint: disable=consider-using-with
+    temporary_file = tempfile.NamedTemporaryFile().name
+    file_path = pathlib.Path(temporary_file)
 
     # Check basic save and load
-    settings_v1.first_variable == 66
+    settings_v1.first_variable = 66
     settings_v1.save(file_path)
 
     settings_v1_new = SettingsV1()
@@ -92,17 +97,18 @@ def test_nested_settings_save_load():
     assert settings_v1.animal.name == SettingsV1().animal.name
     assert settings_v1.animal.animal_type == SettingsV1().animal.animal_type
 
+    # pylint: disable=consider-using-with
     temporary_file = tempfile.NamedTemporaryFile()
     file_path = pathlib.Path(temporary_file.name)
 
     # Check basic save and load
     settings_v1.first_variable = 66
-    settings_v1.animal.name = 'pingu'
-    settings_v1.animal.animal_type = 'penguin'
+    settings_v1.animal.name = "pingu"
+    settings_v1.animal.animal_type = "penguin"
 
     assert settings_v1.first_variable == 66
-    assert settings_v1.animal.name == 'pingu'
-    assert settings_v1.animal.animal_type == 'penguin'
+    assert settings_v1.animal.name == "pingu"
+    assert settings_v1.animal.animal_type == "penguin"
 
     settings_v1.save(file_path)
     settings_v1_new = SettingsV1()
@@ -112,15 +118,17 @@ def test_nested_settings_save_load():
     assert settings_v1.animal.name == settings_v1_new.animal.name
     assert settings_v1.animal.animal_type == settings_v1_new.animal.animal_type
 
+
 def test_simple_migration_settings_save_load():
     settings_v1 = SettingsV1()
 
+    # pylint: disable=consider-using-with
     temporary_file = tempfile.NamedTemporaryFile()
     file_path = pathlib.Path(temporary_file.name)
 
     settings_v1.first_variable = 66
-    settings_v1.animal.name = 'pingu'
-    settings_v1.animal.animal_type = 'penguin'
+    settings_v1.animal.name = "pingu"
+    settings_v1.animal.animal_type = "penguin"
 
     settings_v1.save(file_path)
     settings_v1_new = SettingsV1()
@@ -134,15 +142,17 @@ def test_simple_migration_settings_save_load():
     assert settings_v1.animal.name == settings_v2.new_animal_name.name
     assert settings_v1.animal.animal_type == settings_v2.new_animal_name.animal_type
 
+
 def test_simple_settings_expanded_save_load():
     settings_v1 = SettingsV1()
 
+    # pylint: disable=consider-using-with
     temporary_file = tempfile.NamedTemporaryFile()
     file_path = pathlib.Path(temporary_file.name)
 
     settings_v1.first_variable = 66
-    settings_v1.animal.name = 'pingu'
-    settings_v1.animal.animal_type = 'penguin'
+    settings_v1.animal.name = "pingu"
+    settings_v1.animal.animal_type = "penguin"
 
     # Load expanded settings with older settings structure
     settings_v1.save(file_path)

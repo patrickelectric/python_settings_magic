@@ -2,10 +2,10 @@ import os
 import pathlib
 import tempfile
 
-import pykson
-from pykson import Pykson
-import settings
 import manager
+import pykson
+import settings
+
 
 class SettingsV1(settings.BaseSettings):
     VERSION = 1
@@ -26,6 +26,7 @@ class SettingsV1(settings.BaseSettings):
         data["VERSION"] = SettingsV1.VERSION
         data["version_1_variable"] = self.version_1_variable
 
+
 class SettingsV2(SettingsV1):
     VERSION = 2
     version_2_variable = pykson.IntegerField(default_value=66)
@@ -44,6 +45,7 @@ class SettingsV2(SettingsV1):
 
         data["VERSION"] = SettingsV2.VERSION
         data["version_2_variable"] = self.version_2_variable
+
 
 class SettingsV3(SettingsV2):
     VERSION = 3
@@ -64,6 +66,7 @@ class SettingsV3(SettingsV2):
         data["VERSION"] = SettingsV3.VERSION
         data["version_3_variable"] = self.version_3_variable
 
+
 class SettingsV12(SettingsV3):
     VERSION = 12
     version_12_variable = pykson.IntegerField(default_value=1992)
@@ -82,6 +85,7 @@ class SettingsV12(SettingsV3):
 
         data["VERSION"] = SettingsV12.VERSION
         data["version_12_variable"] = self.version_12_variable
+
 
 def test_basic_settings_save_load():
     temporary_folder = tempfile.mkdtemp()
@@ -154,7 +158,7 @@ def test_basic_settings_save_load():
     assert settings_manager.settings.version_3_variable == 222
     assert settings_manager.settings.version_12_variable == 14
 
-    assert len(os.listdir(config_path.joinpath('ManagerTest'))) == 4
+    assert len(os.listdir(config_path.joinpath("ManagerTest"))) == 4
 
 
 def test_fallback_settings_save_load():
